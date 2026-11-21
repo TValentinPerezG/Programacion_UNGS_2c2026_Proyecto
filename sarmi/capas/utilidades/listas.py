@@ -3,6 +3,11 @@ def esta(elemento, lista):
     Se fija si el elemento aparece en la lista.
     Devuelve True si aparece y False si no.
     Ejemplo: esta("COM-07", ["COM-01", "COM-07"]) devuelve True."""
+    
+    for elem in lista:
+        if elem == elemento:
+            return True
+        
     return False
 
 
@@ -11,4 +16,9 @@ def copiarLista(lista):
     Arma una lista nueva con los mismos elementos, en el mismo orden.
     Devuelve la lista nueva: si después se modifica la copia, la original no cambia.
     Ejemplo: copiarLista([1, 2, 3]) devuelve otra lista [1, 2, 3]."""
-    return []
+    nueva = []
+    
+    for elem in lista:
+        nueva.append(elem)
+    
+    return nueva
