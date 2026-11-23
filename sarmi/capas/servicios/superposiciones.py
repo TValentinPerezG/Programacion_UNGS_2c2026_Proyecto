@@ -8,7 +8,21 @@ def seSuperponen(horarioA, horarioB):
     Si uno termina justo cuando empieza el otro (de 14 a 18 y de 18 a 22), no se superponen.
     Devuelve True si se superponen y False si no.
     Ejemplo: un viernes de 18:00 a 22:00 y un viernes de 20:00 a 22:00 se superponen: devuelve True."""
-    return False
+    diaA = horarioA[configuracion.POSICION_DIA]
+    diaB = horarioB[configuracion.POSICION_DIA]
+    if diaA == configuracion.DIA_VIRTUAL or diaB == configuracion.DIA_VIRTUAL:
+        return False
+
+    if diaA != diaB:
+        return False
+    inicioA = horas.horaAMinutos(horarioA[configuracion.POSICION_HORA_INICIO])
+    finA = horas.horaAMinutos(horarioA[configuracion.POSICION_HORA_FIN])
+    inicioB = horas.horaAMinutos(horarioB[configuracion.POSICION_HORA_INICIO])
+    finB = horas.horaAMinutos(horarioB[configuracion.POSICION_HORA_FIN])
+
+    if finA <= inicioB or finB <= inicioA:
+        return False
+    return True
 
 
 def buscarSuperposiciones(horariosA, horariosB):
@@ -16,4 +30,10 @@ def buscarSuperposiciones(horariosA, horariosB):
     Compara cada horario de la primera lista con cada horario de la segunda.
     Devuelve una lista de pares [horarioA, horarioB] que se superponen, o una lista vacía si no hay ninguno.
     Ejemplo: con [viernesDe18a22] y [viernesDe20a22, lunesDe18a22] devuelve [[viernesDe18a22, viernesDe20a22]]."""
-    return []
+    superposiciones = []
+    
+    for horarioA in horariosA:
+        for horarioB in horariosB:
+            if seSuperponen(horarioA, horarioB):
+                superposiciones.append([horarioA, horarioB])
+    return superposiciones 
