@@ -142,17 +142,27 @@ def contiene(texto, buscado):
 
 ##### `horaAMinutos(hora)`
 
-- **Explicación:** Recibe una hora en formato `"HH:MM"` y calcula cuántos minutos pasaron desde las 00:00.
+- **Explicación:** Recibe una hora en formato `"HH:MM"` y calcula cuántos minutos pasaron desde las 00:00. Se tiene una condicion si por cualquier motivo se recibe mal el dato, y se utiliza una constante del largo de la hora.
 
 - **Código:**
 
 ```python
-def horaAMinutos(hora):
-    total = 0
-    minutos = hora[3] + hora[4]
-    horas = hora[0] + hora[1]
-    total = int(minutos) + MINUTOS_POR_HORA * int(horas)
+MINUTOS_POR_HORA = 60
 
+def horaAMinutos(hora):
+    """Recibe una hora escrita como "HH:MM".
+    Calcula cuántos minutos pasaron desde las 00:00.
+    Devuelve esa cantidad de minutos.
+    Ejemplo: horaAMinutos("18:30") devuelve 1110."""
+    total = 0
+    hrsYMin = hora.split(":")
+    
+    # Para cuando solo se reciben las horas
+    if len(hrsYMin) == 1:
+        return hrsYMin[0] * MINUTOS_POR_HORA    
+    
+    total = int(hrsYMin[1]) + MINUTOS_POR_HORA * int(hrsYMin[0])
+    
     return total
 ```
 
@@ -267,21 +277,32 @@ def ordenarPorHora(horarios):
 
 ##### `filtrarPorTurno(horarios, turno)`
 
-- **Explicación:** Filtra la lista y devuelve los horarios cuyo turno inicial coincide con `turno`.
+- **Explicación:** Filtra la lista y devuelve los horarios cuyo turno inicial coincide con `turno`. La condicion al inicio evita casos donde se rompa las comparaciones por un horario sin hora de inicio.
 
 - **Código:**
 
 ```python
 def turnoDe(horario):
+    """OPCIONAL. Recibe un horario.
+    Se fija en qué turno empieza, según TURNOS en configuracion.py.
+    Devuelve "mañana", "tarde" o "noche", o "" si el horario es virtual.
+    Ejemplo: un horario que empieza a las 18:00 devuelve "noche"."""
+    
+    if horario[configuracion.POSICION_HORA_INICIO] == "":
+        return ""
+    
     hora_inicio_minutos = horas.horaAMinutos(horario[configuracion.POSICION_HORA_INICIO])
-
+    
     if horas.horaAMinutos(configuracion.TURNOS[0][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[0][1]):
         return "mañana"
+    
     elif horas.horaAMinutos(configuracion.TURNOS[1][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[1][1]):
         return "tarde"
-    elif horas.horaAMinutos(configuracion.TURNOS[2][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[2][1]):
+        
+    elif horas.horaAMinutos(configuracion.TURNOS[2][2]) >= hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[2][1]):
         return "noche"
-
+    
+    
     return ""
 
 
