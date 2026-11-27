@@ -7,8 +7,12 @@ def horaAMinutos(hora):
     Devuelve esa cantidad de minutos.
     Ejemplo: horaAMinutos("18:30") devuelve 1110."""
     total = 0
-    minutos = hora[3] + hora[4]
-    horas = hora[0] + hora[1]
-    total = int(minutos) + MINUTOS_POR_HORA * int(horas)
+    hrsYMin = hora.split(":")
+    
+    # Para cuando solo se reciben las horas
+    if len(hrsYMin) == 1:
+        return hrsYMin[0] * MINUTOS_POR_HORA    
+    
+    total = int(hrsYMin[1]) + MINUTOS_POR_HORA * int(hrsYMin[0])
     
     return total

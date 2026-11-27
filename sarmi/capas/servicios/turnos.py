@@ -7,6 +7,10 @@ def turnoDe(horario):
     Se fija en qué turno empieza, según TURNOS en configuracion.py.
     Devuelve "mañana", "tarde" o "noche", o "" si el horario es virtual.
     Ejemplo: un horario que empieza a las 18:00 devuelve "noche"."""
+    
+    if horario[configuracion.POSICION_HORA_INICIO] == "":
+        return ""
+    
     hora_inicio_minutos = horas.horaAMinutos(horario[configuracion.POSICION_HORA_INICIO])
     
     if horas.horaAMinutos(configuracion.TURNOS[0][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[0][1]):
