@@ -1,54 +1,311 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="imagenes/sarmia-oscuro.png">
-    <img src="imagenes/sarmia.png" alt="SarmIA, el agente de la UNGS" width="460">
-  </picture>
-</p>
-
 <p align="center"><b>Trabajo práctico de Introducción a la Programación · 2.º semestre 2026</b></p>
 
 
-- **Persistencia** (lee la oferta académica del archivo CSV).
-- **Utilidades** (funciones generales sobre listas, textos y horas, que se reutilizan en todo el proyecto).
-- **Servicios** (la lógica del problema: buscar materias, aulas, superposiciones y turnos, y armar las respuestas).
-- **Herramientas** (las funciones que el modelo puede usar; solo llaman a los servicios).
-- **Controles** (revisan la pregunta antes de que llegue al modelo).
 
+# Informe del Trabajo Práctico: SarmIA
+
+> **Materia:** Introducción a la Programación — Universidad Nacional de General Sarmiento (UNGS)  
+> **Semestre:** 2.º semestre 2026  
+> **Integrantes:** Tobias Valentin Perez Gomez y Luca Lagraña Giménez
+
+## 1. Introducción
+
+SarmIA es un asistente conversacional pensado para ayudar a estudiantes de la UNGS a consultar información de la oferta académica de la cursada, como materias, comisiones, aulas y horarios.
+
+A través de una conversación, permite buscar materias o comisiones, consultar qué horarios se dictan en un aula en determinado día, saber en qué turno empieza un horario y detectar si distintos horarios se superponen entre sí.
+
+## 2. Funciones implementadas, dificultades y decisiones tomadas
+
+### A. Módulo `sarmi/capas/servicios/superposiciones.py` (Luca Lagraña Giménez)
+
+#### `seSuperponen(horarioA, horarioB)`
+
+- **Explicación:** Revisa dos horarios (por ejemplo, de dos comisiones) y devuelve verdadero si se superponen o falso si no se superponen. Si alguno de los horarios es virtual o si son de distinto día, devuelve falso de entrada; si son del mismo día y no virtuales, pasa inicio y fin a minutos y devuelve falso solo cuando un rango termina antes o justo cuando empieza el otro.
+
+- **Código:**
+
+```python
+def seSuperponen(horarioA, horarioB):
+    diaA = horarioA[configuracion.POSICION_DIA]
+    diaB = horarioB[configuracion.POSICION_DIA]
+
+    if diaA == configuracion.DIA_VIRTUAL or diaB == configuracion.DIA_VIRTUAL:
+        return False
+
+    if diaA != diaB:
+        return False
+
+    inicioA = horas.horaAMinutos(horarioA[configuracion.POSICION_HORA_INICIO])
+    FinA = horas.horaAMinutos(horarioA[configuracion.POSICION_HORA_FIN])
+    inicioB = horas.horaAMinutos(horarioB[configuracion.POSICION_HORA_INICIO])
+    finB = horas.horaAMinutos(horarioB[configuracion.POSICION_HORA_FIN])
+
+    if finA <= inicioB or finB <= inicioA:
+        return False
+
+    return True
 ```
-sarmi/
-├── agent.py                  Define el agente: modelo, instrucciones y herramientas
-├── configuracion.py          Valores configurables
-├── datos/oferta.csv          Oferta académica (un horario por fila)
-└── capas/
-    ├── persistencia/         repositorio.py
-    ├── utilidades/           listas.py, textos.py, horas.py
-    ├── servicios/            materias.py, aulas.py, superposiciones.py, turnos.py, consultas.py
-    ├── herramientas/         herramientas.py
-    └── controles/            controles.py
-tests/                        Tests de las funciones
-configurarClave.py            Guarda la clave de Gemini
-verificarEntorno.py           Revisa que la instalación esté completa
+
+#### `buscarSuperposiciones(horariosA, horariosB)`
+
+- **Explicación:** Compara cada horario de la primera lista con cada horario de la segunda y devuelve una lista con los pares `[horarioA, horarioB]` que chocan, o una lista vacía si no hay ninguno.
+
+- **Código:**
+
+```python
+def buscarSuperposiciones(horariosA, horariosB):
+    superposiciones = []
+
+    for horarioA in horariosA:
+        for horarioB in horariosB:
+            if seSuperponen(horarioA, horarioB):
+                superposiciones.append([horarioA, horarioB])
+
+    return superposiciones
 ```
 
+#### Dificultades y decisiones tomadas
 
-### 📝 Formato de entrega
-- La entrega se divide en 2 partes: **código** e **informe**:
+- Al principio la mayor dificultad fue ubicarme en la organización general del proyecto, identificar dónde estaban definidas las posiciones de cada campo y manejar el flujo de trabajo con Git y GitHub.
+- Se decidió descartar primero los casos de horarios virtuales (`DIA_VIRTUAL`) y de días distintos (`diaA != diaB`) para no evaluar horas cuando no puede haber superposición.
+- Para los horarios presenciales del mismo día, se decidió pasar inicio y fin a minutos y usar `<=` (`finA <= inicioB or finB <= inicioA`) para que si un horario empieza justo cuando termina el otro no cuente como superposición. También se reutilizó `seSuperponen` dentro de `buscarSuperposiciones` para no repetir la comparación.
 
-  - **Parte 1: código:** todo el desarrollo debe estar en un repositorio interno del grupo (*fork* del repo base del TP). Se debe agregar a los docentes de la comisión para que puedan seguir los avances (corregir funciones, dar sugerencias, etc.). Dado el caudal de alumnos, **los estudiantes son responsables de avisar a los docentes para revisar una pre-entrega o resolver cualquier duda que bloquee el avance del TP**.
+---
 
-    Sugerimos:
-      - Que cada integrante tenga su propia cuenta de GitHub, NO usar una única en el proyecto.
-      - Cada integrante debe *commitear* una o varias porciones de código, dependiendo cómo distribuyan el trabajo. **Se debe visualizar el aporte individual al TP.**
-      - **Nunca subir el archivo ```.env``` con la clave.**
+### B. Módulos implementados por Tobias Valentin Perez Gomez
 
-  - **Parte 2: informe:** deben redactar un documento donde exista una introducción que explique de qué se trata el trabajo (sin utilizar lenguaje técnico), que incluya el código de las funciones implementadas y una breve explicación de cada una de ellas junto con las **dificultades de implementación** y **decisiones tomadas** -con su correspondiente justificación-. **NO incluir explicaciones de funcionalidades de Python, ADK o similares**. Si usaron IA para programar, contar para qué la usaron y qué cambiaron de lo que propuso. Este documento debe estar en formato PDF anexo dentro de la carpeta del TP.
+#### 1. `sarmi/capas/utilidades/listas.py`
 
-  🔥 **Se DEBE cumplir con ambas partes (código + informe) para aprobar el trabajo práctico.**
+##### `esta(elemento, lista)`
 
-### 📝 Documentación adicional
-- Documentación oficial de Google ADK disponible aquí: https://google.github.io/adk-docs/
-- Cómo crear la clave de Gemini: https://ai.google.dev/gemini-api/docs/api-key
-- Sección **GIT**
-    - Introducción a GIT: [clic acá](https://www.youtube.com/watch?v=mzHWafbVRyU).
-    - Manejo de ramas/branches: [clic acá](https://www.youtube.com/watch?v=BRY9gamL9PE).
-    - Merge & resolución de conflictos: [clic acá](https://www.youtube.com/watch?v=9YUaf-uxuRM).
+- **Explicación:** Indica si `elemento` aparece en `lista` devolviendo verdadero o falso.
+
+##### `copiarLista(lista)`
+
+- **Explicación:** Crea y devuelve una lista nueva con los mismos elementos en el mismo orden, sin modificar la lista original.
+
+- **Código:**
+
+```python
+def esta(elemento, lista):
+    for elem in lista:
+        if elem == elemento:
+            return True
+
+    return False
+
+
+def copiarLista(lista):
+    nueva = []
+
+    for elem in lista:
+        nueva.append(elem)
+
+    return nueva
+```
+
+#### 2. `sarmi/capas/utilidades/textos.py`
+
+##### `normalizar(texto)`
+
+- **Explicación:** Convierte texto a minúsculas y reemplaza las letras con tilde por su equivalente sin tilde según la configuración.
+
+##### `contiene(texto, buscado)`
+
+- **Explicación:** Normaliza `texto` y verifica si `buscado` aparece dentro de él.
+
+- **Código:**
+
+```python
+def normalizar(texto):
+    texto_normalizado = ""
+
+    for caracter in texto:
+        if caracter.lower() not in configuracion.LETRAS_CON_TILDE:
+            texto_normalizado = texto_normalizado + caracter.lower()
+        else:
+            for i in range(len(configuracion.LETRAS_CON_TILDE)):
+                if caracter.lower() == configuracion.LETRAS_CON_TILDE[i]:
+                    texto_normalizado = texto_normalizado + configuracion.LETRAS_SIN_TILDE[i]
+                    break
+
+    return texto_normalizado
+
+
+def contiene(texto, buscado):
+    texto_normalizado = normalizar(texto)
+
+    return buscado in texto_normalizado
+```
+
+#### 3. `sarmi/capas/utilidades/horas.py`
+
+##### `horaAMinutos(hora)`
+
+- **Explicación:** Recibe una hora en formato `"HH:MM"` y calcula cuántos minutos pasaron desde las 00:00.
+
+- **Código:**
+
+```python
+def horaAMinutos(hora):
+    total = 0
+    minutos = hora[3] + hora[4]
+    horas = hora[0] + hora[1]
+    total = int(minutos) + MINUTOS_POR_HORA * int(horas)
+
+    return total
+```
+
+#### 4. `sarmi/capas/servicios/materias.py`
+
+##### `valoresDistintos(horarios, posicion)`
+
+- **Explicación:** Recorre los horarios y reúne los valores ubicados en `posicion` sin repetir, evitando duplicados con la función `esta`.
+
+##### `buscarMateria(oferta, nombre)`
+
+- **Explicación:** Busca en `oferta` los horarios cuya materia contiene `nombre`, normalizando mayúsculas y tildes.
+
+##### `filtrarMateriaExacta(horarios, nombre)`
+
+- **Explicación:** Filtra la lista quedándose solo con los horarios cuyo nombre de materia coincide exactamente (normalizado) con `nombre`.
+
+##### `filtrarPorComision(horarios, comision)`
+
+- **Explicación:** Extrae el número de comisión y devuelve los horarios que pertenecen a esa comisión.
+
+- **Código:**
+
+```python
+def valoresDistintos(horarios, posicion):
+    distintos = []
+
+    for elem in horarios:
+        if not listas.esta(elem[posicion], distintos):
+            distintos.append(elem[posicion])
+
+    return distintos
+
+
+def buscarMateria(oferta, nombre):
+    horarios_materia = []
+
+    for materia in oferta:
+        if textos.contiene(textos.normalizar(materia[configuracion.POSICION_MATERIA]), textos.normalizar(nombre)):
+            horarios_materia.append(materia)
+
+    return horarios_materia
+
+
+def filtrarMateriaExacta(horarios, nombre):
+    horarios_materia = []
+
+    for materia in horarios:
+        if textos.normalizar(materia[configuracion.POSICION_MATERIA]) == textos.normalizar(nombre):
+            horarios_materia.append(materia)
+
+    return horarios_materia
+
+
+def filtrarPorComision(horarios, comision):
+    com = textos.extraerNumero(comision)
+    horarios_comision = []
+
+    for materia in horarios:
+        if textos.extraerNumero(materia[configuracion.POSICION_COMISION]) == com:
+            horarios_comision.append(materia)
+
+    return horarios_comision
+```
+
+#### 5. `sarmi/capas/servicios/aulas.py`
+
+##### `horariosEnAula(oferta, aula, dia)`
+
+- **Explicación:** Devuelve los horarios de `oferta` que corresponden al aula y al día solicitados.
+
+##### `ordenarPorHora(horarios)`
+
+- **Explicación:** Arma y devuelve una copia ordenada de menor a mayor según la hora de inicio en minutos, sin modificar la lista original.
+
+- **Código:**
+
+```python
+def horariosEnAula(oferta, aula, dia):
+    horarios_materias = []
+
+    for horario in oferta:
+        if textos.extraerNumero(horario[configuracion.POSICION_AULA]) == textos.extraerNumero(aula) and textos.normalizar(horario[configuracion.POSICION_DIA]) == textos.normalizar(dia):
+            horarios_materias.append(horario)
+
+    return horarios_materias
+
+
+def ordenarPorHora(horarios):
+    copia = listas.copiarLista(horarios)
+    hora_en_minutos = []
+
+    for hora in copia:
+        hora_en_minutos.append(horas.horaAMinutos(hora[configuracion.POSICION_HORA_INICIO]))
+
+    for posicion in range(len(hora_en_minutos)):
+        actual = posicion
+
+        while actual - 1 >= 0 and hora_en_minutos[actual - 1] > hora_en_minutos[actual]:
+            hora_en_minutos[actual - 1], hora_en_minutos[actual] = hora_en_minutos[actual], hora_en_minutos[actual - 1]
+            copia[actual - 1], copia[actual] = copia[actual], copia[actual - 1]
+            actual = actual - 1
+
+    return copia
+```
+
+#### 6. `sarmi/capas/servicios/turnos.py` (Opcional)
+
+##### `turnoDe(horario)`
+
+- **Explicación:** Determina si el horario empieza en el turno `"mañana"`, `"tarde"` o `"noche"` según los rangos configurados, o devuelve `""` si no corresponde a ninguno.
+
+##### `filtrarPorTurno(horarios, turno)`
+
+- **Explicación:** Filtra la lista y devuelve los horarios cuyo turno inicial coincide con `turno`.
+
+- **Código:**
+
+```python
+def turnoDe(horario):
+    hora_inicio_minutos = horas.horaAMinutos(horario[configuracion.POSICION_HORA_INICIO])
+
+    if horas.horaAMinutos(configuracion.TURNOS[0][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[0][1]):
+        return "mañana"
+    elif horas.horaAMinutos(configuracion.TURNOS[1][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[1][1]):
+        return "tarde"
+    elif horas.horaAMinutos(configuracion.TURNOS[2][2]) > hora_inicio_minutos >= horas.horaAMinutos(configuracion.TURNOS[2][1]):
+        return "noche"
+
+    return ""
+
+
+def filtrarPorTurno(horarios, turno):
+    horarios_turno = []
+
+    for horario in horarios:
+        inicio = turnoDe(horario)
+
+        if textos.normalizar(inicio) == textos.normalizar(turno):
+            horarios_turno.append(horario)
+
+    return horarios_turno
+```
+
+##### Dificultades y decisiones tomadas
+
+- 
+
+---
+
+## 3. Uso de IA
+
+Se utilizó asistencia de IA como apoyo para comprender la consigna y la estructura del proyecto, revisar casos y lógicas de las funciones, y redactar y organizar este informe.
+
+Se adaptaron las implementaciones a las constantes, funciones auxiliares y criterios del proyecto —reutilizando utilidades propias y comprobando con los tests— y se revisó el documento para ajustarlo a lo pedido.
+

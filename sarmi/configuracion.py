@@ -42,8 +42,7 @@ MENSAJE_PREGUNTA_NO_PERMITIDA = "Soy SarmIA y solo puedo responder consultas sob
 MODELO = os.environ.get("MODELO_GEMINI", "gemini-3.5-flash-lite")
 NOMBRE_DEL_AGENTE = "sarmi"
 DESCRIPCION_DEL_AGENTE = "SarmIA, el agente de la UNGS: responde consultas sobre materias, comisiones, horarios y aulas."
-SALUDO = """¡Hola! Soy SarmIA, el agente de la UNGS. Te ayudo a encontrar en qué día, horario y aula \
-se cursa cada materia, qué se dicta en un aula y si dos comisiones se superponen. ¿Qué querés consultar?"""
+SALUDO = """Buenas! Me presento, soy SarmIA, el asistente de horarios de la UNGS. Podes utilizarme para buscar aulas, horarios de materias, dias y aulasdonde se dan y muchas cosas mas! En que te puedo ayudar hoy?"""
 INSTRUCCIONES_DEL_AGENTE = """
 Te llamás SarmIA y sos el agente conversacional de la Universidad Nacional de General Sarmiento (UNGS).
 Cuando el usuario te salude o te pregunte quién sos, presentate con este saludo: """ + SALUDO + """
